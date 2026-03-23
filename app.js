@@ -11,8 +11,14 @@ async function orchestration () {
     if(credentialsToSend.ok) {
         tokenJWT = await credentialsToSend.json();
         console.log("Connexion réussis :", tokenJWT)
-        downloadJSON(tokenJWT)
-
+        const dataFormat = formatRequest()
+        const graphqlData = downloadJSON(tokenJWT, dataFormat)
+            if(graphqlData.ok) {
+                console.log("Connexion avec le Token réussie. Récupération des données de GraphQL :", graphqlData)
+            } else {
+                console.log("Connexion avec le Token échouée.", graphqlData.status)
+            }
+        
     } else {
         console.log("Connexion échouée :", credentialsToSend.status)
     }
@@ -59,6 +65,34 @@ btn.addEventListener('click', function(event) {
     orchestration();
 });
 
-function downloadJSON(tokenJWT) {
+function formatRequest() {
+    const query = {
+        query:`
+            query {
+                user {
+                    login
+                    id
+                    firstName
+                    lasName
+                }
+            }
+        }
+        `
+    }
+return query
+}
 
+// Téléchargement du JSON des données de l'API.
+async function downloadJSON(tokenJWT, dataFormat) {
+    const connexion = await fetch(urlGraphQL, {
+        method: 'POST',
+        headers: {
+            // Le Bearer est pour renvoyer le token d'identiication plutôt
+            // que de répéter le processus de connexion à chaque fois.
+            'Authorization': `Bearer ${tokenJWT}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(dataFormat)
+    })
+    return connexion
 }
