@@ -1,18 +1,19 @@
 // Variable constantes
-const urlSignin = "https://zone01normandie.org/api/auth/signin";
-const urlGraphQL = "https://zone01normandie.org/graphql-engine/v1/graphql";
+const urlSignin = "https://zone01normandie.org/api/auth/signin/";
+const urlGraphQL = "https://zone01normandie.org/api/graphql-engine/v1/graphql";
 let tokenJWT = ""
 
-async function orchestration () {
-    const data = recoltLogin();
+async function orchestration (form) {
+    const data = recoltLogin(form);
     const dataBase64 = translationInBase64(data.username, data.password);
-    const credentialsToSend = await sendCredentials(dataBase64)
+    const credentialsToSend = await sendCredentials(dataBase64);
 
     if(credentialsToSend.ok) {
         tokenJWT = await credentialsToSend.json();
-        console.log("Connexion réussis :", tokenJWT)
-        const dataFormat = formatRequest()
-        const graphqlData = downloadJSON(tokenJWT, dataFormat)
+        console.log("Connexion réussis :", tokenJWT);
+        const dataFormat = formatRequest();
+        console.log(dataFormat)
+        const graphqlData = await downloadJSON(tokenJWT, dataFormat);
             if(graphqlData.ok) {
                 console.log("Connexion avec le Token réussie. Récupération des données de GraphQL :", graphqlData)
             } else {
@@ -25,9 +26,9 @@ async function orchestration () {
 }
 
 // Récupération du login
-function recoltLogin() {
-    const username = document.getElementById('login').value;
-    const password = document.getElementById('password').value;
+function recoltLogin(form) {
+    const username = form.username.value;
+    const password = form.password.value;
     return {username, password}
 }
 
@@ -35,10 +36,11 @@ function recoltLogin() {
 function translationInBase64(username, password) {
     // Conversion des chaînes de caractères en base64
     // Afin de pouvoir les envoyer après au serveur.
-    const credentials = btoa(`${username}:${password}`);
+    const credentials = window.btoa(`${username}:${password}`);
     return credentials
 }
 
+//
 async function sendCredentials (credentials) {
     const connexion = await fetch(urlSignin, {
         method: 'POST',
@@ -53,38 +55,35 @@ async function sendCredentials (credentials) {
     return connexion
 }
 
-// Ecoute du bouton "Connexion"
-const btn = document.getElementById('btn-login');
+// Ecoute de l'action de soumission.
+const form = document.getElementById('form');
 
-btn.addEventListener('click', function(event) {
+form.addEventListener('submit', function(event) {
     // Empêche le rechargement de la page (comportement par défaut du type="submit")
     // Ce qui nous évite de perdre les données si la page devait se recharger.
     event.preventDefault(); 
     
     // Appel de la fonction si l'utilisateur appuye sur le bouton.
-    orchestration();
+    orchestration(form);
 });
 
 function formatRequest() {
-    const query = {
-        query:`
+    return {
+        query: `
             query {
                 user {
                     login
                     id
                     firstName
-                    lasName
+                    lastName
                 }
-            }
-        }
-        `
-    }
-return query
+            }`
+    };
 }
 
 // Téléchargement du JSON des données de l'API.
 async function downloadJSON(tokenJWT, dataFormat) {
-    const connexion = await fetch(urlGraphQL, {
+    const response = await fetch(urlGraphQL, {
         method: 'POST',
         headers: {
             // Le Bearer est pour renvoyer le token d'identiication plutôt
@@ -93,6 +92,6 @@ async function downloadJSON(tokenJWT, dataFormat) {
             'Content-Type': 'application/json'
         },
         body: JSON.stringify(dataFormat)
-    })
-    return connexion
+    });
+    return response
 }
