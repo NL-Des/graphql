@@ -1,5 +1,7 @@
 // Variable constantes
-const url = "https://zone01normandie.org/intra/rouen/profile/api/auth/signin";
+const urlSignin = "https://zone01normandie.org/api/auth/signin";
+const urlGraphQL = "https://zone01normandie.org/graphql-engine/v1/graphql";
+let tokenJWT = ""
 
 async function orchestration () {
     const data = recoltLogin();
@@ -7,8 +9,10 @@ async function orchestration () {
     const credentialsToSend = await sendCredentials(dataBase64)
 
     if(credentialsToSend.ok) {
-        const result = await credentialsToSend.json();
-        console.log("Connexion réussis :", result)
+        tokenJWT = await credentialsToSend.json();
+        console.log("Connexion réussis :", tokenJWT)
+        downloadJSON(tokenJWT)
+
     } else {
         console.log("Connexion échouée :", credentialsToSend.status)
     }
@@ -30,7 +34,7 @@ function translationInBase64(username, password) {
 }
 
 async function sendCredentials (credentials) {
-    const connexion = await fetch(url, {
+    const connexion = await fetch(urlSignin, {
         method: 'POST',
         headers: {
             // Le Basic est le nom du schéma d'authendification.
@@ -51,6 +55,10 @@ btn.addEventListener('click', function(event) {
     // Ce qui nous évite de perdre les données si la page devait se recharger.
     event.preventDefault(); 
     
-    // Appelle de la fonction si l'utilisateur appuye sur le bouton.
+    // Appel de la fonction si l'utilisateur appuye sur le bouton.
     orchestration();
 });
+
+function downloadJSON(tokenJWT) {
+
+}
