@@ -3,6 +3,13 @@ const urlSignin = "https://zone01normandie.org/api/auth/signin/";
 const urlGraphQL = "https://zone01normandie.org/api/graphql-engine/v1/graphql";
 let tokenJWT = ""
 
+// Si le token de connexion est déjà enregistré dans le navigateur.
+// Alors on va directement sur l'affichage
+const savedToken = localStorage.getItem('jwt');
+if (savedToken) {
+    
+}
+
 async function orchestration (form) {
     const data = recoltLogin(form);
     const dataBase64 = translationInBase64(data.username, data.password);
@@ -10,12 +17,15 @@ async function orchestration (form) {
 
     if(credentialsToSend.ok) {
         tokenJWT = await credentialsToSend.json();
-        console.log("Connexion réussis :", tokenJWT);
+        // localStorage.setItemsert à stocker une donnée de manière permanente dans le navigateur.
+        // jwt : JSONWebToken
+        localStorage.setItem('jwt', tokenJWT);
+        console.log("Connexion réussis, sauvegarde du token dans le navigateur");
         const dataFormat = formatRequest();
-        console.log(dataFormat)
         const graphqlData = await downloadJSON(tokenJWT, dataFormat);
             if(graphqlData.ok) {
-                console.log("Connexion avec le Token réussie. Récupération des données de GraphQL :", graphqlData)
+                const result = await graphqlData.json() // Transformation de la réponse en JSON
+                console.log("Connexion avec le Token réussie. Récupération des données de GraphQL :", result.data)
             } else {
                 console.log("Connexion avec le Token échouée.", graphqlData.status)
             }
@@ -55,31 +65,28 @@ async function sendCredentials (credentials) {
     return connexion
 }
 
-// Ecoute de l'action de soumission.
+// Les Boutons
+// Bouton Connexion
 const form = document.getElementById('form');
+    form.addEventListener('submit', function(event) {
+        // Empêche le rechargement de la page (comportement par défaut du type="submit")
+        // Ce qui nous évite de perdre les données si la page devait se recharger.
+        event.preventDefault(); 
+        
+        // Appel de la fonction si l'utilisateur appuye sur le bouton.
+        orchestration(form);
+    });
 
-form.addEventListener('submit', function(event) {
-    // Empêche le rechargement de la page (comportement par défaut du type="submit")
-    // Ce qui nous évite de perdre les données si la page devait se recharger.
-    event.preventDefault(); 
-    
-    // Appel de la fonction si l'utilisateur appuye sur le bouton.
-    orchestration(form);
-});
-
-function formatRequest() {
-    return {
-        query: `
-            query {
-                user {
-                    login
-                    id
-                    firstName
-                    lastName
-                }
-            }`
-    };
-}
+// Bouton Déconnexion.
+const formLogout = document.getElementById('logout-form')
+    if(formLogout) {
+        formLogout.addEventListener('submit', function(event) {
+            event.preventDefault();
+            localStorage.removeItem('jwt')
+            window.location.href = '/base.html'
+        }
+    )
+    }
 
 // Téléchargement du JSON des données de l'API.
 async function downloadJSON(tokenJWT, dataFormat) {
@@ -95,3 +102,44 @@ async function downloadJSON(tokenJWT, dataFormat) {
     });
     return response
 }
+
+// Pour obtenir la liste des éléments présents dans le JSON.
+function formatRequest() {
+    return {
+        query: `
+            query {
+              __type(name: "user") {
+                fields {
+                  name
+                  description
+                  type {
+                    name
+                    kind
+                  }
+                }
+              }
+            }`
+    };
+}
+
+// Requête query pour obtenir les données.
+/* function formatRequest() {
+    return {
+        query: `
+            query {
+                user {
+                    firstName
+                    lastName
+                    login
+                    profile
+                    public
+                    objects
+                    objects_aggregate
+                    progresses
+                    results
+                    transactions
+                    xps
+                }
+            }`
+    };
+} */

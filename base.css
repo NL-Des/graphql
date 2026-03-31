@@ -68,3 +68,16 @@ body {
 .connection:hover {
     background-color: #4b00b4;
 }
+
+.disconnection {
+    background-color: #f44336; /* Rouge */
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.disconnection:hover {
+    background-color: #d32f2f;
+}
